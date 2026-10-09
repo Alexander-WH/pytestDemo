@@ -5,7 +5,7 @@ test_get_all_user_info:
 test_get_get_one_user_info:
   # 用户名,期望结果,期望返回码,期望返回信息
   - ["wintest5", True, 0, "查询成功"]
-  - ["wintest1111", False, "1004", "查不到相关用户"]
+  - ["wintest1111", False, 1004, "查不到相关用户"]
 
 test_register_user:
   # 第一条：正常注册，使用全新手机号 13511112222

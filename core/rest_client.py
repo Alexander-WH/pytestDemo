@@ -28,24 +28,19 @@ class RestClient():
         url = self.api_root_url + url
         headers = dict(**kwargs).get("headers")
         params = dict(**kwargs).get("params")
-        files = dict(**kwargs).get("params")
-        cookies = dict(**kwargs).get("params")
+        files = dict(**kwargs).get("files")
+        cookies = dict(**kwargs).get("cookies")
         self.request_log(url, method, data, json, params, headers, files, cookies)
         if method == "GET":
             return self.session.get(url, **kwargs)
         if method == "POST":
-            return requests.post(url, data, json, **kwargs)
+            return self.session.post(url, data=data, json=json, **kwargs)
         if method == "PUT":
-            if json:
-                # PUT 和 PATCH 中没有提供直接使用json参数的方法，因此需要用data来传入
-                data = complexjson.dumps(json)
-            return self.session.put(url, data, **kwargs)
+            return self.session.put(url, data=data, json=json, **kwargs)
         if method == "DELETE":
             return self.session.delete(url, **kwargs)
         if method == "PATCH":
-            if json:
-                data = complexjson.dumps(json)
-            return self.session.patch(url, data, **kwargs)
+            return self.session.patch(url, data=data, json=json, **kwargs)
 
     def request_log(self, url, method, data=None, json=None, params=None, headers=None, files=None, cookies=None, **kwargs):
         logger.info("接口请求地址 ==>> {}".format(url))
