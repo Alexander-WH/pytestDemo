@@ -1,61 +1,96 @@
 # pytestDemo
 
-本项目实现接口自动化的技术选型：**Python+Requests+Pytest+YAML+Allure** ，主要是针对本人的一个接口项目来开展的，通过 Python+Requests 来发送和处理HTTP协议的请求接口，使用 Pytest 作为测试执行器，使用 YAML 来管理测试数据，使用 Allure 来生成测试报告。
+本项目是一个基于 **Python + Pytest + Requests + YAML + Allure** 的接口自动化测试框架，专门针对 [flaskDemo](https://github.com/Alexander-WH/flaskDemo) 后端接口项目进行自动化测试。
 
->相关接口项目：[使用 Python+Flask+MySQL+Redis 开发简单接口实例](https://github.com/wintests/flaskDemo)
+框架采用**分层设计**与**数据驱动**模式，实现了接口封装、关键字组装、测试数据管理、前置/后置数据清理，并最终生成直观可视化的 Allure 测试报告。
 
-## 项目说明
+## 技术选型
 
-本项目在实现过程中，把整个项目拆分成请求方法封装、HTTP接口封装、关键字封装、测试用例等模块。
-
-首先利用Python把HTTP接口封装成Python接口，接着把这些Python接口组装成一个个的关键字，再把关键字组装成测试用例，而测试数据则通过YAML文件进行统一管理，然后再通过Pytest测试执行器来运行这些脚本，并结合Allure输出测试报告。
-
-当然，如果感兴趣的话，还可以再对接口自动化进行Jenkins持续集成。
-
-## 项目部署
-
-首先，下载项目源码后，在根目录下找到 ```requirements.txt``` 文件，然后通过 pip 工具安装 requirements.txt 依赖，执行命令：
-
-```
-pip3 install -r requirements.txt
-```
-
-接着，修改 ```config/setting.ini``` 配置文件，在Windows环境下，安装相应依赖之后，在命令行窗口执行命令：
-
-```
-pytest
-```
-
-**注意**：因为我这里是针对自己的接口项目进行测试，如果想直接执行我的测试用例来查看效果，需要提前部署上面提到的 [flaskDemo](https://github.com/wintests/flaskDemo) 接口项目。
+- **测试框架**：Pytest
+- **HTTP 客户端**：Requests
+- **数据驱动**：PyYAML（管理测试数据）
+- **动态数据**：Faker（生成随机手机号、用户名等）
+- **数据库校验**：PyMySQL（用于前置/后置数据清理）
+- **测试报告**：Allure-pytest + Allure Commandline
 
 ## 项目结构
 
-- api ====>> 接口封装层，如封装HTTP接口为Python接口
-- common ====>> 各种工具类
-- core ====>> requests请求方法封装、关键字返回结果类
-- config ====>> 配置文件
-- data ====>> 测试数据文件管理
-- operation ====>> 关键字封装层，如把多个Python接口封装为关键字
-- pytest.ini ====>> pytest配置文件
-- requirements.txt ====>> 相关依赖包文件
-- testcases ====>> 测试用例
+- `api/`：接口封装层，将 HTTP 接口封装为 Python 方法
+- `common/`：公共工具类
+  - `logger.py`：日志记录模块
+  - `mysql_operate.py`：MySQL 数据库操作封装
+  - `read_data.py`：YAML/INI/JSON 文件读取工具
+- `config/`：配置文件目录
+  - `setting.example.ini`：配置文件模板（需复制为 setting.ini 后填入真实密码）
+- `core/`：核心底层封装
+  - `rest_client.py`：Requests 请求二次封装
+  - `result_base.py`：自定义断言结果返回类
+- `data/`：测试数据文件（YAML 格式，实现数据与代码分离）
+- `operation/`：关键字封装层，将多个 Python 接口组装成业务关键字
+- `testcases/`：测试用例层
+  - `api_test/`：针对单个接口的测试
+  - `scenario_test/`：针对业务场景的测试（如注册-登录-修改）
+- `pytest.ini`：Pytest 配置文件
+- `requirements.txt`：项目依赖清单
 
-## 关键字封装说明
+## 环境要求
 
-关键字应该是具有一定业务意义的，在封装关键字的时候，可以通过调用多个接口来完成。在某些情况下，比如测试一个充值接口的时候，在充值后可能需要调用查询接口得到最新账户余额，来判断查询结果与预期结果是否一致，那么可以这样来进行测试：
+- Python 3.8+（推荐 3.10 或 3.11，同样做了3.12+的适配，具体版本自行测试）
+- MySQL 5.7+ 或 8.0
+- Redis 服务（默认端口 6379）
+- Allure 环境（需提前安装 Java 1.8+ 并配置环境变量）
+- **前置条件**：必须先在本地启动 `flaskDemo` 后端项目（端口 9999）
 
-- 1, 首先，可以把 **```充值-查询```** 的操作封装为一个关键字，在这个关键字中依次调用充值和查询的接口，并可以自定义关键字的返回结果。
-- 2, 接着，在编写测试用例的时候，直接调用关键字来进行测试，这时就可以拿到关键字返回的结果，那么断言的时候，就可以直接对关键字返回结果进行断言。
+## 项目部署
+
+### 1. 安装依赖
+在项目根目录下，执行以下命令安装依赖：
+```bash
+pip install -r requirements.txt
+```
+
+### 2. 修改配置
+
+1. 进入 `config/` 文件夹，复制 `setting.example.ini`，并重命名为 `setting.ini`。
+2. 打开 `setting.ini`，填入你本机的 MySQL 密码（注意，测试框架需要直连数据库进行数据清理）：
+
+```ini
+[mysql]
+MYSQL_HOST = 127.0.0.1
+MYSQL_PASSWD = your_mysql_password_here
+MYSQL_DB = test
+```
+
+### 3. 运行测试
+
+确保 `flaskDemo` 的后端服务已经在 `http://127.0.0.1:9999` 端口运行，然后执行：
+
+```bash
+# 运行全部用例，并生成 Allure 原始数据
+pytest --alluredir=./allure-results --clean-alluredir
+
+# 或者只运行某个特定模块
+pytest testcases/api_test/test_01_get_user_info.py
+```
+
+### 4. 查看测试报告
+
+测试执行完毕后，在终端输入以下命令启动 Allure 服务，浏览器会自动弹出报告页面：
+
+```bash
+allure serve ./allure-results
+```
+
+*(如果想生成静态 HTML 报告发给他人，可执行：allure generate ./allure-results -o ./allure-report --clean，然后直接双击打开 index.html)*
+
+## 核心亮点
+
+1. **数据驱动（DDT）**：所有测试数据通过 `data/` 目录下的 YAML 文件管理，便于维护和扩展。
+2. **数据清理与隔离**：利用 Pytest Fixture 机制，在测试用例执行前后自动处理脏数据（如清理冲突的手机号），保证用例可无限次重复执行。
+3. **动态造数**：集成 Faker 库，在批量注册接口测试中动态生成随机账号，规避唯一键冲突。
+4. **分层架构**：清晰划分 API 层、Operation 层、Testcase 层，降低代码耦合度。
+5. **可视化报告**：集成 Allure，报告包含请求步骤、响应数据、断言详情以及缺陷分类统计。
 
 ## 测试报告效果展示
 
-在命令行执行命令：```pytest``` 运行用例后，会得到一个测试报告的原始文件，但这个时候还不能打开成HTML的报告，还需要在项目根目录下，执行命令启动 ```allure``` 服务：
-
-```
-# 需要提前配置allure环境，才可以直接使用命令行
-allure serve ./report
-```
-
-最终，可以看到测试报告的效果图如下：
-
-![image.png](https://upload-images.jianshu.io/upload_images/16853007-248f805c82dbf99c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+> ![Allure测试报告](./images/allure_report.png)
