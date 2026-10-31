@@ -25,7 +25,8 @@ class RestClient():
         return self.request(url, "PATCH", data, **kwargs)
 
     def request(self, url, method, data=None, json=None, **kwargs):
-        url = self.api_root_url + url
+        # 拼接时统一去掉接口地址首尾多余的斜杠，避免出现 // 或缺少 / 的情况
+        url = self.api_root_url.rstrip("/") + "/" + url.lstrip("/")
         headers = dict(**kwargs).get("headers")
         params = dict(**kwargs).get("params")
         files = dict(**kwargs).get("files")
