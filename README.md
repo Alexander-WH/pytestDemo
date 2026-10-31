@@ -1,5 +1,7 @@
 # pytestDemo
 
+[![API Test](https://github.com/Alexander-WH/pytestDemo/actions/workflows/ci.yml/badge.svg)](https://github.com/Alexander-WH/pytestDemo/actions/workflows/ci.yml)
+
 本项目是一个基于 **Python + Pytest + Requests + YAML + Allure** 的接口自动化测试框架，专门针对 [flaskDemo](https://github.com/Alexander-WH/flaskDemo) 后端接口项目进行自动化测试。
 
 框架采用**分层设计**与**数据驱动**模式，实现了接口封装、关键字组装、测试数据管理、前置/后置数据清理，并最终生成直观可视化的 Allure 测试报告。

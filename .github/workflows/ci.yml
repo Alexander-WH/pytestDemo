@@ -1,0 +1,127 @@
+name: API Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test
+        ports:
+          - 3306:3306
+        options: >-
+          --default-authentication-plugin=mysql_native_password
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - name: 拉取测试代码
+        uses: actions/checkout@v4
+
+      - name: 拉取被测服务
+        uses: actions/checkout@v4
+        with:
+          repository: Alexander-WH/flaskDemo
+          path: _flaskDemo
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            _flaskDemo/requirements.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r _flaskDemo/requirements.txt
+          pip install cryptography
+
+      - name: 生成被测服务配置
+        run: |
+          cd _flaskDemo
+          sed -e 's/"your_mysql_password_here"/"root"/' \
+              -e 's/"your_redis_password_here"/None/' \
+              config/setting.example.py > config/setting.py
+          cat config/setting.py
+
+      - name: 初始化数据库
+        run: |
+          for i in $(seq 1 20); do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then break; fi
+            sleep 2
+          done
+          mysql -h 127.0.0.1 -uroot -proot < _flaskDemo/init.sql
+          mysql -h 127.0.0.1 -uroot -proot -e "SELECT id,username,role FROM test.user;"
+
+      - name: 生成测试配置
+        run: |
+          cp config/setting.example.ini config/setting.ini
+          sed -i 's/your_mysql_password_here/root/' config/setting.ini
+          echo "--- setting.ini ---"
+          cat config/setting.ini
+
+      - name: 启动被测服务
+        run: |
+          cd _flaskDemo
+          nohup python -c "from api.user import app; app.run(host='127.0.0.1', port=9999, debug=False, use_reloader=False)" > ../flask.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:9999/ > /dev/null; then
+              echo "被测服务已就绪（第 ${i} 次探测）"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "被测服务启动失败，日志如下："
+          cat ../flask.log
+          exit 1
+
+      - name: 运行接口测试
+        run: pytest testcases -q --alluredir=allure-results
+
+      - name: 上传 Allure 原始结果
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: 失败时打印被测服务日志
+        if: failure()
+        run: |
+          echo "===== flask.log ====="
+          tail -n 120 flask.log || true
