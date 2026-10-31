@@ -27,21 +27,11 @@ jobs:
           MYSQL_DATABASE: test
         ports:
           - 3306:3306
-        options: >-
-          --default-authentication-plugin=mysql_native_password
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=12
+        options: --default-authentication-plugin=mysql_native_password
       redis:
         image: redis:7
         ports:
           - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=12
 
     steps:
       - name: 拉取测试代码
@@ -75,14 +65,38 @@ jobs:
           sed -e 's/"your_mysql_password_here"/"root"/' \
               -e 's/"your_redis_password_here"/None/' \
               config/setting.example.py > config/setting.py
-          cat config/setting.py
+          echo "已生成 config/setting.py（密码不回显）"
 
-      - name: 初始化数据库
+      - name: 等待中间件就绪并初始化数据库
         run: |
-          for i in $(seq 1 20); do
-            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then break; fi
+          mysql_ready=0
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent 2>/dev/null; then
+              mysql_ready=1
+              echo "MySQL 就绪（第 ${i} 次探测）"
+              break
+            fi
             sleep 2
           done
+          if [ "$mysql_ready" != "1" ]; then
+            echo "MySQL 60 秒内未就绪，终止"
+            exit 1
+          fi
+
+          redis_ready=0
+          for i in $(seq 1 20); do
+            if (echo > /dev/tcp/127.0.0.1/6379) >/dev/null 2>&1; then
+              redis_ready=1
+              echo "Redis 就绪（第 ${i} 次探测）"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$redis_ready" != "1" ]; then
+            echo "Redis 20 秒内未就绪，终止"
+            exit 1
+          fi
+
           mysql -h 127.0.0.1 -uroot -proot < _flaskDemo/init.sql
           mysql -h 127.0.0.1 -uroot -proot -e "SELECT id,username,role FROM test.user;"
 
@@ -90,8 +104,7 @@ jobs:
         run: |
           cp config/setting.example.ini config/setting.ini
           sed -i 's/your_mysql_password_here/root/' config/setting.ini
-          echo "--- setting.ini ---"
-          cat config/setting.ini
+          echo "已生成 config/setting.ini（密码不回显）"
 
       - name: 启动被测服务
         run: |
@@ -107,6 +120,53 @@ jobs:
           echo "被测服务启动失败，日志如下："
           cat ../flask.log
           exit 1
+
+      - name: 准备批量用户（test_06 依赖，按 JSON 原样注册）
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+
+          import requests
+
+          path = "data/generated_users.json"
+          users = json.load(open(path, encoding="utf-8"))
+          base = "http://127.0.0.1:9999"
+
+          created = existed = failed = 0
+          for item in users:
+              payload = {
+                  "username": item["username"],
+                  "password": "123456",
+                  "sex": "0",
+                  "telephone": item["telephone"],
+                  "address": "CI",
+              }
+              body = requests.post(f"{base}/register", json=payload, timeout=10).json()
+              code = body.get("code")
+              if code == 0:
+                  created += 1
+              elif code in (2002, 2005):
+                  existed += 1
+              else:
+                  failed += 1
+                  print(f"  注册失败 {item['username']}: {body}")
+
+          print(f"共 {len(users)} 条 -> 新建 {created}，已存在 {existed}，失败 {failed}")
+          if failed or created + existed != len(users):
+              sys.exit(1)
+          PY
+
+      - name: 校验批量用户已落库
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot -N -e \
+            "SELECT COUNT(*) FROM test.user WHERE username LIKE 'test_user_%'" | tee count.txt
+          total=$(cat count.txt)
+          if [ "$total" -lt 50 ]; then
+            echo "批量用户不足：期望 50，实际 $total"
+            exit 1
+          fi
+          echo "批量用户已就绪：$total 条"
 
       - name: 运行接口测试
         run: pytest testcases -q --alluredir=allure-results
