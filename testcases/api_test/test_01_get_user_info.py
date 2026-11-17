@@ -23,8 +23,8 @@ class TestGetUserInfo():
 
     @allure.story("用例--获取全部用户信息")
     @allure.description("该用例是针对获取所有用户信息接口的测试")
-    @allure.issue("https://www.cnblogs.com/wintest", name="点击，跳转到对应BUG的链接地址")
-    @allure.testcase("https://www.cnblogs.com/wintest", name="点击，跳转到对应用例的链接地址")
+    @allure.issue("https://jira.example.com/browse/ISSUE-XXX", name="关联BUG单（请替换为你的地址）")
+    @allure.testcase("https://testcase.example.com/case/XXX", name="关联测试用例（请替换为你的地址）")
     @pytest.mark.single
     @pytest.mark.parametrize("except_result, except_code, except_msg",
                              api_data["test_get_all_user_info"])
@@ -42,8 +42,8 @@ class TestGetUserInfo():
 
     @allure.story("用例--获取某个用户信息")
     @allure.description("该用例是针对获取单个用户信息接口的测试")
-    @allure.issue("https://www.cnblogs.com/wintest", name="点击，跳转到对应BUG的链接地址")
-    @allure.testcase("https://www.cnblogs.com/wintest", name="点击，跳转到对应用例的链接地址")
+    @allure.issue("https://jira.example.com/browse/ISSUE-XXX", name="关联BUG单（请替换为你的地址）")
+    @allure.testcase("https://testcase.example.com/case/XXX", name="关联测试用例（请替换为你的地址）")
     @allure.title("测试数据：【 {username}，{except_result}，{except_code}，{except_msg} 】")
     @pytest.mark.single
     @pytest.mark.parametrize("username, except_result, except_code, except_msg",

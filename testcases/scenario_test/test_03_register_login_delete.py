@@ -26,8 +26,8 @@ class TestRegLogDelete():
 
     @allure.story("用例--注册/登录/删除--预期成功")
     @allure.description("该用例是针对 注册-登录-删除 场景的测试")
-    @allure.issue("https://www.cnblogs.com/wintest", name="点击，跳转到对应BUG的链接地址")
-    @allure.testcase("https://www.cnblogs.com/wintest", name="点击，跳转到对应用例的链接地址")
+    @allure.issue("https://jira.example.com/browse/ISSUE-XXX", name="关联BUG单（请替换为你的地址）")
+    @allure.testcase("https://testcase.example.com/case/XXX", name="关联测试用例（请替换为你的地址）")
     @allure.title("用户注册登录删除-预期成功")
     @pytest.mark.multiple
     def test_user_register_login_delete_success(self, testcase_data):
@@ -64,8 +64,8 @@ class TestRegLogDelete():
 
     @allure.story("用例--注册/登录/删除--预期失败")
     @allure.description("该用例是针对 注册-登录-删除 场景的测试")
-    @allure.issue("https://www.cnblogs.com/wintest", name="点击，跳转到对应BUG的链接地址")
-    @allure.testcase("https://www.cnblogs.com/wintest", name="点击，跳转到对应用例的链接地址")
+    @allure.issue("https://jira.example.com/browse/ISSUE-XXX", name="关联BUG单（请替换为你的地址）")
+    @allure.testcase("https://testcase.example.com/case/XXX", name="关联测试用例（请替换为你的地址）")
     @allure.title("用户注册登录删除-预期失败")
     @pytest.mark.negative
     @pytest.mark.xfail(reason="xfail示例：预期失败的用例，如存在尚未解决的Bug等")

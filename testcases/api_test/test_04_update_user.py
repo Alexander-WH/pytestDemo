@@ -23,8 +23,8 @@ class TestUpdate():
 
     @allure.story("用例--修改用户信息")
     @allure.description("该用例是针对获取用户修改接口的测试")
-    @allure.issue("https://www.cnblogs.com/wintest", name="点击，跳转到对应BUG的链接地址")
-    @allure.testcase("https://www.cnblogs.com/wintest", name="点击，跳转到对应用例的链接地址")
+    @allure.issue("https://jira.example.com/browse/ISSUE-XXX", name="关联BUG单（请替换为你的地址）")
+    @allure.testcase("https://testcase.example.com/case/XXX", name="关联测试用例（请替换为你的地址）")
     @allure.title(
         "测试数据：【 {id}，{new_password}，{new_telephone}，{new_sex}，{new_address}，{except_result}，{except_code}，{except_msg}】")
     @pytest.mark.single

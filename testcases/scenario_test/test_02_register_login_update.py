@@ -75,8 +75,8 @@ class TestRegLogUpdate():
 
     @allure.story("用例--注册/登录/修改--预期失败")
     @allure.description("该用例是针对 注册-登录-修改 场景的测试")
-    @allure.issue("https://www.cnblogs.com/wintest", name="点击，跳转到对应BUG的链接地址")
-    @allure.testcase("https://www.cnblogs.com/wintest", name="点击，跳转到对应用例的链接地址")
+    @allure.issue("https://jira.example.com/browse/ISSUE-XXX", name="关联BUG单（请替换为你的地址）")
+    @allure.testcase("https://testcase.example.com/case/XXX", name="关联测试用例（请替换为你的地址）")
     @allure.title("用户注册登录修改--预期失败")
     @pytest.mark.multiple
     @pytest.mark.usefixtures("delete_register_user")
